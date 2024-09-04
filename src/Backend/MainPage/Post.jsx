@@ -9,7 +9,9 @@ const Post = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    image: null
+    image: null,
+    eventTime: '',  // Nuevo campo para la hora del evento
+    price: ''       // Nuevo campo para el precio
   });
   const [status, setStatus] = useState({ error: '', success: '' });
 
@@ -47,8 +49,8 @@ const Post = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const { title, description, image } = formData;
-    if (!title || !description || !image) {
+    const { title, description, image, eventTime, price } = formData;
+    if (!title || !description || !image || !eventTime || !price) {
       setStatus({ error: 'Todos los campos son obligatorios.', success: '' });
       return;
     }
@@ -59,11 +61,13 @@ const Post = () => {
         title,
         description,
         imageURL,
+        eventTime,     // Añade el horario del evento
+        price,         // Añade el precio
         timestamp: new Date().toISOString()
       });
 
       setStatus({ error: '', success: 'Publicación creada exitosamente.' });
-      setFormData({ title: '', description: '', image: null });
+      setFormData({ title: '', description: '', image: null, eventTime: '', price: '' });
     } catch (error) {
       setStatus({ error: error.message, success: '' });
     }
@@ -90,6 +94,28 @@ const Post = () => {
             id="description"
             name="description"
             value={formData.description}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="eventTime">Horario del Evento</label>
+          <input
+            type="datetime-local"
+            id="eventTime"
+            name="eventTime"
+            value={formData.eventTime}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="price">Precio</label>
+          <input
+            type="number"
+            id="price"
+            name="price"
+            value={formData.price}
             onChange={handleChange}
             required
           />
