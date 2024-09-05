@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebaseconfig'; 
-import { collection, addDoc, doc, deleteDoc, updateDoc, onSnapshot, query, orderBy, getDocs } from 'firebase/firestore'; 
+import { collection, addDoc, doc, deleteDoc, updateDoc, onSnapshot, query, orderBy } from 'firebase/firestore'; 
 import { getAuth } from 'firebase/auth';
 
 const CommentsSection = ({ postId }) => {

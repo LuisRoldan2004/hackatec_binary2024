@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../firebaseconfig'; // Asegúrate de que estas rutas sean correctas
+import { db } from '../firebaseconfig'; 
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
-import CommentsSection from './CommentsSection'; // Asegúrate de que la ruta sea correcta
-import { getAuth } from 'firebase/auth';
+import { Link } from 'react-router-dom'; // Importa Link para la navegación
+import { getAuth } from 'firebase/auth'; // Para obtener el usuario autenticado
+import CommentsSection from './CommentsSection';
 
 const PostsList = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const auth = getAuth();
+  const auth = getAuth(); // Inicializa la autenticación
+  const user = auth.currentUser; // Obtiene el usuario autenticado
 
   useEffect(() => {
     const postsCollection = collection(db, 'posts');
@@ -30,8 +32,10 @@ const PostsList = () => {
     setSearchTerm(e.target.value);
   };
 
+  // Filtrar las publicaciones excluyendo las del usuario autenticado
   const filteredPosts = posts.filter(post =>
-    post.title.toLowerCase().includes(searchTerm.toLowerCase())
+    post.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
+    post.userEmail !== user.email // Filtrar las publicaciones del propio usuario
   );
 
   if (loading) {
@@ -51,23 +55,27 @@ const PostsList = () => {
       {filteredPosts.length > 0 ? (
         <ul>
           {filteredPosts.map((post) => (
-            <li key={post.id} style={{ marginBottom: '20px', border: '1px solid #ddd', borderRadius: '8px', padding: '10px', display: 'flex', alignItems: 'center' }}>
-              {post.userPhoto && (
-                <img
-                  src={post.userPhoto}
-                  alt={post.userName}
-                  style={{ width: '50px', height: '50px', borderRadius: '50%', marginRight: '10px' }}
-                />
-              )}
-              <div style={{ flex: 1 }}>
-                <h3>{post.title}</h3>
-                <p><strong>{post.userName}</strong></p>
-                <p>{post.description}</p>
-                {post.imageURL && <img src={post.imageURL} alt={post.title} style={{ maxWidth: '100%' }} />}
-                <p><small>{new Date(post.timestamp).toLocaleString()}</small></p>
-                {/* Agrega el componente de comentarios */}
-                <CommentsSection postId={post.id} />
+            <li key={post.id} style={{ marginBottom: '20px', border: '1px solid #ddd', borderRadius: '8px', padding: '10px', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+                {post.userPhoto && (
+                  <img
+                    src={post.userPhoto}
+                    alt={post.userName}
+                    style={{ width: '50px', height: '50px', borderRadius: '50%', marginRight: '10px' }}
+                  />
+                )}
+                <div>
+                  <p><strong>{post.userName || 'Usuario desconocido'}</strong></p>
+                  <p><small>{new Date(post.timestamp).toLocaleString()}</small></p>
+                </div>
               </div>
+              <Link to={`/post/${post.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                <h3>{post.title}</h3>
+              </Link>
+              <p>{post.description}</p>
+              {post.imageURL && <img src={post.imageURL} alt={post.title} style={{ maxWidth: '100%' }} />}
+              <p><strong>Publicado por: {post.userName || 'Usuario desconocido'}</strong></p> {/* Aquí se imprime el nombre del usuario */}
+              <CommentsSection postId={post.id} />
             </li>
           ))}
         </ul>

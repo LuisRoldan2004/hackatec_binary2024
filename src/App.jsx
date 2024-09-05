@@ -6,6 +6,7 @@ import Welcome from'./Backend/Login/Welcome';
 import ResetPassword from './Backend/Login/ResetPassword';
 import Post from './Backend/MainPage/Post';
 import PostsList from './Backend/MainPage/PostsList';
+import PostDetail from './Backend/MainPage/PostDetail';
 
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
       <Route path="/reset-password" element={<ResetPassword/>}/>
       <Route path="/post" element={<Post/>}/>
       <Route path='/postslist' element={<PostsList/>}/>
+      <Route path="/post/:id" element={<PostDetail />} /> 
     </Routes>
   </Router>
 );
