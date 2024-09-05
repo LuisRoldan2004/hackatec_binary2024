@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebaseconfig'; 
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom'; // Importa el hook useNavigate
 
@@ -22,13 +22,16 @@ const MyReservation = () => {
       const transactionsCollection = collection(db, 'transactions');
       const q = query(transactionsCollection, where('userId', '==', userId));
 
-      const unsubscribe = onSnapshot(q, (snapshot) => {
+      const unsubscribe = onSnapshot(q, async (snapshot) => {
         const transactionsData = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
         }));
         setTransactions(transactionsData);
         setLoading(false);
+
+        // Actualizar el límite de personas en función de las transacciones
+        await updatePostLimit(transactionsData);
       });
 
       return () => unsubscribe(); // Cleanup cuando se desmonte el componente
@@ -36,6 +39,29 @@ const MyReservation = () => {
 
     fetchTransactions();
   }, [auth]);
+
+  // Función para actualizar el límite de personas de los posts
+  const updatePostLimit = async (transactionsData) => {
+    for (const transaction of transactionsData) {
+      const postRef = doc(db, 'posts', transaction.postId);
+      const postSnap = await getDoc(postRef);
+
+      if (postSnap.exists()) {
+        const postData = postSnap.data();
+        const updatedLimit = postData.limit - 1;
+
+        // Actualizar el límite solo si es mayor a 0
+        if (updatedLimit >= 0) {
+          await updateDoc(postRef, {
+            limit: updatedLimit,
+          });
+          console.log(`Límite de personas actualizado para el post ${transaction.postId}. Nuevo límite: ${updatedLimit}`);
+        } else {
+          console.log(`El post ${transaction.postId} ya no tiene más espacio disponible.`);
+        }
+      }
+    }
+  };
 
   const goToWelcome = () => {
     navigate('/welcome'); // Navegar a la ruta /welcome

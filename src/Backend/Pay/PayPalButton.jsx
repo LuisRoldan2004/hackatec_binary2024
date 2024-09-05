@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebaseconfig';
-import { doc, setDoc, collection, addDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, collection, addDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
-const PayPalButton = ({ amount, postId }) => {
+const PayPalButton = ({ amount, postId, isFull }) => {
   const [transactionId, setTransactionId] = useState(null);
   const auth = getAuth(); // Obtener el usuario autenticado
 
   useEffect(() => {
+    if (isFull) return; // No cargar el script si el cupo está lleno
+
     const script = document.createElement('script');
     script.src = `https://www.paypal.com/sdk/js?client-id=AUEfkaVadFgi_PnZEaxJXcJ1x9SsMRphqaskGkLbTCKr7AMsxAhhiNKhxco8Ea8lRe6cURSdSlTuDNYz&currency=USD`;
     script.addEventListener('load', () => {
@@ -21,22 +23,19 @@ const PayPalButton = ({ amount, postId }) => {
             }],
           });
         },
-        onApprove: (data, actions) => {
+        onApprove: async (data, actions) => {
           return actions.order.capture().then(async (details) => {
-            // Mostrar alerta con nombre del pagador e ID de la transacción
             alert(`Transacción completada por ${details.payer.name.given_name}. ID de transacción: ${details.id}`);
 
-            setTransactionId(details.id); // Guarda el ID de la transacción
+            setTransactionId(details.id);
 
             try {
-              // Guardar los detalles de la transacción en Firestore
               await saveTransactionDetails(details);
-              
-              // Mostrar alerta de éxito después de guardar los detalles
               alert('Detalles de la transacción agregados a la base de datos.');
 
-              // Actualizar estado del pago en la colección "reservations"
+              // Actualizar el estado del pago y el límite de personas
               await updatePaymentStatus(details.id, postId);
+              await updatePostLimit(postId);
             } catch (error) {
               console.error('Error al guardar los detalles de la transacción:', error);
               alert('Ocurrió un error al guardar los detalles de la transacción.');
@@ -51,11 +50,10 @@ const PayPalButton = ({ amount, postId }) => {
 
     document.body.appendChild(script);
 
-    // Limpiar el script cuando el componente se desmonte
     return () => {
       document.body.removeChild(script);
     };
-  }, [amount, postId]);
+  }, [amount, postId, isFull]);
 
   // Guardar detalles de la transacción en Firestore
   const saveTransactionDetails = async (details) => {
@@ -70,12 +68,36 @@ const PayPalButton = ({ amount, postId }) => {
         postId: postId || 'N/A'
       };
 
-      // Crear un nuevo documento en la colección "transactions"
       await addDoc(collection(db, 'transactions'), transactionData);
-
       console.log('Detalles de la transacción guardados con éxito en Firebase');
     } catch (error) {
       console.error('Error al guardar los detalles de la transacción:', error);
+    }
+  };
+
+  // Actualizar el límite de personas y reflejar la reservación en el post
+  const updatePostLimit = async (postId) => {
+    try {
+      const postRef = doc(db, 'posts', postId);
+      const postSnap = await getDoc(postRef);
+
+      if (postSnap.exists()) {
+        const postData = postSnap.data();
+        const updatedLimit = postData.limit - 1;
+
+        // Actualizar el límite de personas si aún hay espacio
+        if (updatedLimit >= 0) {
+          await updateDoc(postRef, {
+            limit: updatedLimit,
+            reserved: true, // Mostrar que hay una reservación
+          });
+          console.log('Límite de personas actualizado y reservación registrada.');
+        } else {
+          alert('No hay más espacios disponibles.');
+        }
+      }
+    } catch (error) {
+      console.error('Error al actualizar el límite de personas:', error);
     }
   };
 
@@ -83,12 +105,10 @@ const PayPalButton = ({ amount, postId }) => {
   const updatePaymentStatus = async (transactionId, postId) => {
     try {
       const orderRef = doc(db, 'reservations', postId);
-      await setDoc(orderRef, {
+      await updateDoc(orderRef, {
         paymentStatus: 'confirmed',
         transactionId: transactionId
-      }, { merge: true });
-
-      console.log('Estado del pago actualizado en la base de datos');
+      });
     } catch (error) {
       console.error('Error al actualizar el estado del pago:', error);
     }
@@ -97,7 +117,7 @@ const PayPalButton = ({ amount, postId }) => {
   return (
     <div>
       <h2>Total a Pagar: ${amount.toFixed(2)}</h2>
-      <div id="paypal-button-container"></div>
+      {!isFull ? <div id="paypal-button-container"></div> : <p><strong>El cupo está lleno</strong></p>}
     </div>
   );
 };

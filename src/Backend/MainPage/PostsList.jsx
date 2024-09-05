@@ -3,7 +3,7 @@ import { db } from '../firebaseconfig';
 import { collection, query, orderBy, onSnapshot, deleteDoc, doc, addDoc } from 'firebase/firestore';
 import { Link } from 'react-router-dom'; 
 import CommentsSection from './CommentsSection';
-import { getAuth } from 'firebase/auth'; // Para obtener el nombre del usuario autenticado
+import { getAuth } from 'firebase/auth';
 
 const PostsList = () => {
   const [posts, setPosts] = useState([]);
@@ -16,7 +16,6 @@ const PostsList = () => {
   const auth = getAuth(); // Obtener el usuario autenticado
 
   useEffect(() => {
-    // Obtener publicaciones
     const postsCollection = collection(db, 'posts');
     const q = query(postsCollection, orderBy('timestamp', 'desc'));
 
@@ -26,11 +25,10 @@ const PostsList = () => {
         ...doc.data(),
       }));
       setPosts(postsData);
-      setFilteredPosts(postsData); // Inicialmente, muestra todas las publicaciones
+      setFilteredPosts(postsData);
       setLoading(false);
     });
 
-    // Obtener usuarios
     const usersCollection = collection(db, 'users');
     const unsubscribeUsers = onSnapshot(usersCollection, (snapshot) => {
       const usersData = {};
@@ -40,7 +38,6 @@ const PostsList = () => {
       setUsers(usersData);
     });
 
-    // Obtener comentarios
     const commentsCollection = collection(db, 'comments');
     const unsubscribeComments = onSnapshot(commentsCollection, (snapshot) => {
       const commentsData = {};
@@ -73,7 +70,6 @@ const PostsList = () => {
     setFilteredPosts(filtered);
   };
 
-  // Función para guardar los detalles en Firestore
   const saveTransactionData = async (postId, transactionId) => {
     try {
       const user = auth.currentUser;
@@ -85,7 +81,6 @@ const PostsList = () => {
         timestamp: new Date().toISOString(),
       };
 
-      // Guardar los detalles en una colección llamada "transactions"
       await addDoc(collection(db, 'transactions'), transactionData);
       console.log('Detalles de la transacción guardados con éxito.');
     } catch (error) {
@@ -98,22 +93,13 @@ const PostsList = () => {
     if (!confirmDelete) return;
 
     try {
-      // Simulación de un ID de transacción para fines de prueba
       const transactionId = `TRX-${Math.random().toString(36).substr(2, 9)}`;
-
-      // Eliminar comentarios asociados
       const commentsToDelete = comments[postId] || [];
       for (const comment of commentsToDelete) {
         await deleteDoc(doc(db, 'comments', comment.id));
       }
-
-      // Eliminar publicación
       await deleteDoc(doc(db, 'posts', postId));
-
-      // Guardar los datos en la colección "transactions" después de eliminar
       await saveTransactionData(postId, transactionId);
-
-      // Mostrar alerta de éxito
       alert("Publicación eliminada correctamente.");
     } catch (error) {
       console.error("Error al eliminar la publicación:", error);
@@ -167,6 +153,10 @@ const PostsList = () => {
                   <h3>{post.title}</h3>
                 </Link>
                 <p>{post.description}</p>
+                <p><strong>Ubicación:</strong> {post.location}</p> {/* Mostrar ubicación */}
+                <p><strong>Categoría:</strong> {post.category}</p> {/* Mostrar categoría */}
+                <p><strong>Límite de Personas:</strong> {post.maxPeople}</p> {/* Mostrar límite de personas */}
+                {post.isClosed && <p style={{ color: 'red' }}><strong>Este viaje está cerrado.</strong></p>} {/* Mostrar estado de cerrado */}
                 {post.imageURL && <img src={post.imageURL} alt={post.title} style={{ maxWidth: '100%' }} />}
                 <CommentsSection postId={post.id} />
                 <button onClick={() => handleDeletePost(post.id)} style={{ marginTop: '10px', padding: '8px', backgroundColor: 'red', color: 'white', border: 'none', borderRadius: '4px' }}>
