@@ -1,4 +1,3 @@
-// src/pages/PostDetail.js
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
@@ -41,7 +40,7 @@ const PostDetail = () => {
       <p><strong>Publicado por:</strong> {post.userName || 'Usuario desconocido'}</p>
       <p><strong>Precio:</strong> ${post.price}</p>
       <p><strong>Horario del Evento:</strong> {new Date(post.eventTime).toLocaleString()}</p>
-      <PayPalButton amount={100} />
+      <PayPalButton amount={parseFloat(post.price)} /> {/* Asegúrate de que el precio sea un número */}
     </div>
   );
 };

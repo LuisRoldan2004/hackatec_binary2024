@@ -7,7 +7,8 @@ import ResetPassword from './Backend/Login/ResetPassword';
 import Post from './Backend/MainPage/Post';
 import PostsList from './Backend/MainPage/PostsList';
 import PostDetail from './Backend/MainPage/PostDetail';
-
+import Reservation from './Backend/MainPage/MyReservation';
+import MyReservations from './Backend/MainPage/MyReservation';
 
 function App() {
 
@@ -21,6 +22,7 @@ function App() {
       <Route path="/post" element={<Post/>}/>
       <Route path='/postslist' element={<PostsList/>}/>
       <Route path="/post/:id" element={<PostDetail />} /> 
+      <Route path="/myreservation" element={<MyReservations/>}/>
     </Routes>
   </Router>
 );

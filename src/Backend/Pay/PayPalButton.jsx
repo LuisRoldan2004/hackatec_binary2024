@@ -1,6 +1,11 @@
+// src/components/Pay/PayPalButton.js
 import React, { useState, useEffect } from 'react';
+import { db } from '../firebaseconfig'; 
+import { doc, setDoc } from 'firebase/firestore';
 
-const PayPalButton = ({ amount }) => {
+const PayPalButton = ({ amount, postId }) => {
+  const [transactionId, setTransactionId] = useState(null);
+
   useEffect(() => {
     const script = document.createElement('script');
     script.src = `https://www.paypal.com/sdk/js?client-id=AUEfkaVadFgi_PnZEaxJXcJ1x9SsMRphqaskGkLbTCKr7AMsxAhhiNKhxco8Ea8lRe6cURSdSlTuDNYz&currency=USD`;
@@ -16,11 +21,12 @@ const PayPalButton = ({ amount }) => {
           });
         },
         onApprove: (data, actions) => {
-          return actions.order.capture().then((details) => {
+          return actions.order.capture().then(async (details) => {
             alert(`Transacción completada por ${details.payer.name.given_name}`);
+            setTransactionId(details.id); // Guarda el ID de la transacción
 
-            // Aquí puedes guardar los detalles en la base de datos si lo deseas
-            saveOrderToDatabase(details);
+            // Actualiza la base de datos con el estado del pago
+            await updatePaymentStatus(details.id, postId);
           });
         },
         onError: (err) => {
@@ -35,19 +41,24 @@ const PayPalButton = ({ amount }) => {
     return () => {
       document.body.removeChild(script);
     };
-  }, [amount]);
+  }, [amount, postId]);
 
-  const saveOrderToDatabase = (details) => {
-    // Aquí agregas la lógica para guardar en la BD, como Firebase, MongoDB, etc.
-    console.log('Guardar en la BD:', {
-      amount,
-      transactionDetails: details,
-    });
+  const updatePaymentStatus = async (transactionId, postId) => {
+    try {
+      const orderRef = doc(db, 'reservations', postId);
+      await setDoc(orderRef, {
+        paymentStatus: 'confirmed',
+        transactionId: transactionId
+      }, { merge: true });
+      console.log('Estado del pago actualizado en la base de datos');
+    } catch (error) {
+      console.error('Error al actualizar el estado del pago:', error);
+    }
   };
 
   return (
     <div>
-      <h2>Total a Pagar: {amount.toFixed(2)}</h2>
+      <h2>Total a Pagar: ${amount.toFixed(2)}</h2>
       <div id="paypal-button-container"></div>
     </div>
   );
