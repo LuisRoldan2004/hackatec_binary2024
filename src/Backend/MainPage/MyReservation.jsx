@@ -2,63 +2,76 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../firebaseconfig'; 
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom'; // Importa el hook useNavigate
 
-const MyReservations = () => {
-  const [reservations, setReservations] = useState([]);
+const MyReservation = () => {
+  const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const auth = getAuth();
+  const navigate = useNavigate(); // Declara el hook useNavigate
 
   useEffect(() => {
-    const fetchReservations = async () => {
+    const fetchTransactions = async () => {
       const user = auth.currentUser;
       if (!user) {
-        alert('Debes estar autenticado para ver tus reservas.');
+        alert('Debes estar autenticado para ver tus transacciones.');
         return;
       }
 
       const userId = user.uid;
-      const reservationsCollection = collection(db, 'reservations');
-      const q = query(reservationsCollection, where('userId', '==', userId));
+      const transactionsCollection = collection(db, 'transactions');
+      const q = query(transactionsCollection, where('userId', '==', userId));
 
       const unsubscribe = onSnapshot(q, (snapshot) => {
-        const reservationsData = snapshot.docs.map(doc => ({
+        const transactionsData = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
         }));
-        setReservations(reservationsData);
+        setTransactions(transactionsData);
         setLoading(false);
       });
 
       return () => unsubscribe(); // Cleanup cuando se desmonte el componente
     };
 
-    fetchReservations();
+    fetchTransactions();
   }, [auth]);
 
+  const goToWelcome = () => {
+    navigate('/welcome'); // Navegar a la ruta /welcome
+  };
+
   if (loading) {
-    return <div>Cargando reservas...</div>;
+    return <div>Cargando transacciones...</div>;
   }
 
   return (
     <div>
-      <h2>Mis Reservas</h2>
-      {reservations.length > 0 ? (
+      <h2>Mis Transacciones</h2>
+      <button onClick={goToWelcome} style={{ padding: '10px 20px', marginBottom: '20px' }}>
+        Volver
+      </button>
+      {transactions.length > 0 ? (
         <ul>
-          {reservations.map((reservation) => (
-            <li key={reservation.id} style={{ marginBottom: '20px', border: '1px solid #ddd', borderRadius: '8px', padding: '10px' }}>
-              <h3>Reserva ID: {reservation.id}</h3>
-              <p><strong>Título del Evento:</strong> {reservation.eventTitle}</p>
-              <p><strong>Hora del Evento:</strong> {new Date(reservation.eventTime).toLocaleString()}</p>
-              <p><strong>Estado del Pago:</strong> {reservation.paymentStatus}</p>
-              <p><strong>Dirección:</strong> {reservation.address}</p>
+          {transactions.map((transaction) => (
+            <li key={transaction.id} style={{ marginBottom: '20px', border: '1px solid #ddd', borderRadius: '8px', padding: '10px' }}>
+              <h3>Transacción ID: {transaction.transactionId}</h3>
+              <p><strong>Nombre del Usuario:</strong> {transaction.userName}</p>
+              <p><strong>Fecha de la Transacción:</strong> {new Date(transaction.transactionDate).toLocaleString()}</p>
+              <p><strong>Monto:</strong> ${transaction.amount}</p>
+              <p><strong>ID de la Publicación:</strong> {transaction.postId}</p>
+              <p><strong>Título del Post:</strong> {transaction.postTitle}</p>
+              {transaction.imageURL && (
+                <img src={transaction.imageURL} alt={`Imagen de la transacción ${transaction.transactionId}`} style={{ maxWidth: '100%', marginTop: '10px' }} />
+              )}
             </li>
           ))}
         </ul>
       ) : (
-        <p>No tienes reservas.</p>
+        <p>No tienes transacciones.</p>
       )}
     </div>
   );
 };
 
-export default MyReservations;
+export default MyReservation;

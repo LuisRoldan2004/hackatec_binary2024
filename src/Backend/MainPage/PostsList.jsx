@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebaseconfig'; 
-import { collection, query, orderBy, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, deleteDoc, doc, addDoc } from 'firebase/firestore';
 import { Link } from 'react-router-dom'; 
 import CommentsSection from './CommentsSection';
+import { getAuth } from 'firebase/auth'; // Para obtener el nombre del usuario autenticado
 
 const PostsList = () => {
   const [posts, setPosts] = useState([]);
@@ -11,6 +12,8 @@ const PostsList = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredPosts, setFilteredPosts] = useState([]);
+
+  const auth = getAuth(); // Obtener el usuario autenticado
 
   useEffect(() => {
     // Obtener publicaciones
@@ -70,15 +73,52 @@ const PostsList = () => {
     setFilteredPosts(filtered);
   };
 
-  const handleDeletePost = async (postId) => {
-    // Eliminar comentarios asociados
-    const commentsToDelete = comments[postId] || [];
-    for (const comment of commentsToDelete) {
-      await deleteDoc(doc(db, 'comments', comment.id));
-    }
+  // Función para guardar los detalles en Firestore
+  const saveTransactionData = async (postId, transactionId) => {
+    try {
+      const user = auth.currentUser;
+      const transactionData = {
+        transactionId: transactionId,
+        userName: user ? user.displayName : 'Usuario desconocido',
+        userId: user ? user.uid : 'N/A',
+        postId: postId,
+        timestamp: new Date().toISOString(),
+      };
 
-    // Eliminar publicación
-    await deleteDoc(doc(db, 'posts', postId));
+      // Guardar los detalles en una colección llamada "transactions"
+      await addDoc(collection(db, 'transactions'), transactionData);
+      console.log('Detalles de la transacción guardados con éxito.');
+    } catch (error) {
+      console.error('Error al guardar los detalles de la transacción:', error);
+    }
+  };
+
+  const handleDeletePost = async (postId) => {
+    const confirmDelete = window.confirm("¿Estás seguro de que deseas eliminar esta publicación?");
+    if (!confirmDelete) return;
+
+    try {
+      // Simulación de un ID de transacción para fines de prueba
+      const transactionId = `TRX-${Math.random().toString(36).substr(2, 9)}`;
+
+      // Eliminar comentarios asociados
+      const commentsToDelete = comments[postId] || [];
+      for (const comment of commentsToDelete) {
+        await deleteDoc(doc(db, 'comments', comment.id));
+      }
+
+      // Eliminar publicación
+      await deleteDoc(doc(db, 'posts', postId));
+
+      // Guardar los datos en la colección "transactions" después de eliminar
+      await saveTransactionData(postId, transactionId);
+
+      // Mostrar alerta de éxito
+      alert("Publicación eliminada correctamente.");
+    } catch (error) {
+      console.error("Error al eliminar la publicación:", error);
+      alert("Ocurrió un error al intentar eliminar la publicación.");
+    }
   };
 
   if (loading) {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { db, storage } from '../firebaseconfig'; // Asegúrate de que estas rutas sean correctas
+import { db, storage } from '../firebaseconfig'; 
 import { collection, addDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -10,8 +10,12 @@ const Post = () => {
     title: '',
     description: '',
     image: null,
-    eventTime: '',  // Nuevo campo para la hora del evento
-    price: ''       // Nuevo campo para el precio
+    eventTime: '',
+    price: '',
+    maxPeople: '',       // Campo para el límite de personas
+    location: '',        // Campo para la ubicación
+    category: '',        // Campo para la categoría
+    isClosed: false      // Campo para cerrar el viaje
   });
   const [status, setStatus] = useState({ error: '', success: '' });
 
@@ -49,8 +53,8 @@ const Post = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const { title, description, image, eventTime, price } = formData;
-    if (!title || !description || !image || !eventTime || !price) {
+    const { title, description, image, eventTime, price, maxPeople, location, category, isClosed } = formData;
+    if (!title || !description || !image || !eventTime || !price || !maxPeople || !location || !category) {
       setStatus({ error: 'Todos los campos son obligatorios.', success: '' });
       return;
     }
@@ -61,13 +65,17 @@ const Post = () => {
         title,
         description,
         imageURL,
-        eventTime,     // Añade el horario del evento
-        price,         // Añade el precio
+        eventTime,
+        price,
+        maxPeople,       // Añadir el límite de personas
+        location,        // Añadir la ubicación
+        category,        // Añadir la categoría
+        isClosed,        // Añadir el estado de cerrado
         timestamp: new Date().toISOString()
       });
 
       setStatus({ error: '', success: 'Publicación creada exitosamente.' });
-      setFormData({ title: '', description: '', image: null, eventTime: '', price: '' });
+      setFormData({ title: '', description: '', image: null, eventTime: '', price: '', maxPeople: '', location: '', category: '', isClosed: false });
     } catch (error) {
       setStatus({ error: error.message, success: '' });
     }
@@ -118,6 +126,49 @@ const Post = () => {
             value={formData.price}
             onChange={handleChange}
             required
+          />
+        </div>
+        <div>
+          <label htmlFor="maxPeople">Límite de Personas</label>
+          <input
+            type="number"
+            id="maxPeople"
+            name="maxPeople"
+            value={formData.maxPeople}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="location">Ubicación</label>
+          <input
+            type="text"
+            id="location"
+            name="location"
+            value={formData.location}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="category">Categoría</label>
+          <input
+            type="text"
+            id="category"
+            name="category"
+            value={formData.category}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="isClosed">Cerrar Viaje</label>
+          <input
+            type="checkbox"
+            id="isClosed"
+            name="isClosed"
+            checked={formData.isClosed}
+            onChange={(e) => setFormData({ ...formData, isClosed: e.target.checked })}
           />
         </div>
         <div>
