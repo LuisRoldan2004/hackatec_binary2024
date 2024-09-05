@@ -9,6 +9,8 @@ import PostsList from './Backend/MainPage/PostsList';
 import PostDetail from './Backend/MainPage/PostDetail';
 import Reservation from './Backend/MainPage/MyReservation';
 import MyReservations from './Backend/MainPage/MyReservation';
+import EditPost from './Backend/MainPage/Editpost';
+
 
 function App() {
 
@@ -23,6 +25,7 @@ function App() {
       <Route path='/postslist' element={<PostsList/>}/>
       <Route path="/post/:id" element={<PostDetail />} /> 
       <Route path="/myreservation" element={<MyReservations/>}/>
+      <Route path="/edit-post/:postId" element={<EditPost />} />
     </Routes>
   </Router>
 );

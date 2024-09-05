@@ -22,7 +22,8 @@ const PayPalButton = ({ amount, postId }) => {
         },
         onApprove: (data, actions) => {
           return actions.order.capture().then(async (details) => {
-            alert(`Transacción completada por ${details.payer.name.given_name}`);
+            // Alerta para mostrar el nombre del pagador y el estado de la transacción
+            alert(`Transacción completada por ${details.payer.name.given_name}. ID de transacción: ${details.id}`);
             setTransactionId(details.id); // Guarda el ID de la transacción
 
             // Actualiza la base de datos con el estado del pago

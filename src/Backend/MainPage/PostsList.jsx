@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebaseconfig'; 
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 import { Link } from 'react-router-dom'; 
 import CommentsSection from './CommentsSection';
 
@@ -70,6 +70,17 @@ const PostsList = () => {
     setFilteredPosts(filtered);
   };
 
+  const handleDeletePost = async (postId) => {
+    // Eliminar comentarios asociados
+    const commentsToDelete = comments[postId] || [];
+    for (const comment of commentsToDelete) {
+      await deleteDoc(doc(db, 'comments', comment.id));
+    }
+
+    // Eliminar publicación
+    await deleteDoc(doc(db, 'posts', postId));
+  };
+
   if (loading) {
     return <div>Cargando publicaciones...</div>;
   }
@@ -118,6 +129,12 @@ const PostsList = () => {
                 <p>{post.description}</p>
                 {post.imageURL && <img src={post.imageURL} alt={post.title} style={{ maxWidth: '100%' }} />}
                 <CommentsSection postId={post.id} />
+                <button onClick={() => handleDeletePost(post.id)} style={{ marginTop: '10px', padding: '8px', backgroundColor: 'red', color: 'white', border: 'none', borderRadius: '4px' }}>
+                  Eliminar
+                </button>
+                <Link to={`/edit-post/${post.id}`} style={{ marginTop: '10px', padding: '8px', backgroundColor: 'blue', color: 'white', textDecoration: 'none', borderRadius: '4px' }}>
+                  Editar
+                </Link>
               </li>
             );
           })}
